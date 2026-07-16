@@ -1,6 +1,29 @@
 import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import requests
 import telebot
+
+# ==========================================================
+# TRUCO PARA RENDER: Servidor Web en segundo plano
+# ==========================================================
+class DummyServer(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"Bot de Free Fire activo y corriendo.")
+
+def run_health_check_server():
+    # Render asigna automáticamente un puerto en la variable de entorno PORT
+    port = int(os.getenv("PORT", 5000))
+    server = HTTPServer(("0.0.0.0", port), DummyServer)
+    print(f" Servidor de respuesta HTTP iniciado en el puerto {port}")
+    server.serve_forever()
+
+# Iniciamos el servidor en un hilo separado para que no bloquee al bot
+threading.Thread(target=run_health_check_server, daemon=True).start()
+# ==========================================================
 
 # 1. Inicializar el bot con el token seguro de Render
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -37,7 +60,7 @@ def handle_like_request(message):
     
     bot.reply_to(message, f"⏳ Procesando envío de likes para el ID: *{player_id}*... Por favor espera.", parse_mode="Markdown")
     
-    # URL simulada de la API de la comunidad (Cambiar por una activa si tienes el endpoint)
+    # URL simulada de la API de la comunidad
     API_URL = f"https://api.ejemplo-comunidad.com/ff/likes?id={player_id}&region=WD"
     
     try:
@@ -49,6 +72,7 @@ def handle_like_request(message):
     except requests.exceptions.RequestException:
         bot.reply_to(message, "❌ Error de conexión al procesar los likes.")
 
+# 4. Arrancar el bot
 if __name__ == "__main__":
     print("Bot encendido exitosamente...")
     bot.infinity_polling()
