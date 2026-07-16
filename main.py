@@ -5,7 +5,7 @@ import requests
 import telebot
 
 # ==========================================================
-# TRUCO PARA RENDER: Servidor Web en segundo plano
+# TRUCO PARA RENDER: Servidor Web con soporte para GET y HEAD
 # ==========================================================
 class DummyServer(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -14,14 +14,19 @@ class DummyServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Bot de Free Fire activo y corriendo.")
 
+    def do_HEAD(self):
+        # Esto responderá correctamente a los pings de Render
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+
 def run_health_check_server():
-    # Render asigna automáticamente un puerto en la variable de entorno PORT
     port = int(os.getenv("PORT", 5000))
     server = HTTPServer(("0.0.0.0", port), DummyServer)
     print(f" Servidor de respuesta HTTP iniciado en el puerto {port}")
     server.serve_forever()
 
-# Iniciamos el servidor en un hilo separado para que no bloquee al bot
+# Iniciamos el servidor en un hilo separado
 threading.Thread(target=run_health_check_server, daemon=True).start()
 # ==========================================================
 
